@@ -1,0 +1,126 @@
+package controlador;
+
+import java.text.NumberFormat;
+import java.util.Locale;
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
+import javafx.fxml.FXML;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.TilePane;
+import javafx.scene.layout.VBox;
+import modelo.Vehiculo;
+
+public class CatalogoController {
+
+    @FXML
+    private TextField txtBuscar;
+
+    @FXML
+    private TilePane contenedorVehiculos;
+
+    private ObservableList<Vehiculo> listaVehiculos;
+
+    @FXML
+    public void initialize() {
+        cargarDatosIniciales();
+        mostrarTarjetas(listaVehiculos);
+
+        // Filtro de búsqueda en tiempo real
+        txtBuscar.textProperty().addListener((observable, oldValue, newValue) -> {
+            filtrarVehiculos(newValue);
+        });
+    }
+
+    private void cargarDatosIniciales() {
+        listaVehiculos = FXCollections.observableArrayList(
+            new Vehiculo("Kawasaki H2", "Motocicleta", 360000000, "/imagenes/kawasaki.png"),
+            new Vehiculo("Nissan GT-R R35", "Automóvil", 450000000, "/imagenes/gtr.png"),
+            new Vehiculo("BMW S1000RR", "Motocicleta", 135000000, "/imagenes/bmw_moto.png"),
+            new Vehiculo("BMW M3 GTR", "Automóvil", 580000000, "/imagenes/bmw_carro.png")
+        );
+    }
+
+    private void mostrarTarjetas(ObservableList<Vehiculo> vehiculos) {
+        contenedorVehiculos.getChildren().clear();
+        NumberFormat formatoMoneda = NumberFormat.getCurrencyInstance(new Locale("es", "CO"));
+
+        for (Vehiculo v : vehiculos) {
+            VBox tarjeta = new VBox(8);
+            tarjeta.setAlignment(Pos.CENTER_LEFT);
+            tarjeta.setPrefWidth(200);
+            tarjeta.setPadding(new Insets(12));
+            tarjeta.setStyle("-fx-background-color: #F9F9F9; -fx-border-color: #E0E0E0; -fx-border-radius: 6; -fx-background-radius: 6;");
+
+            // Imagen del vehículo (con respaldo si aún no has puesto los archivos .png)
+            ImageView imgVehiculo = new ImageView();
+            imgVehiculo.setFitWidth(175);
+            imgVehiculo.setFitHeight(110);
+            imgVehiculo.setPreserveRatio(true);
+            try {
+                imgVehiculo.setImage(new Image(getClass().getResourceAsStream(v.getRutaImagen())));
+            } catch (Exception e) {
+                // Si la imagen no existe todavía, deja el espacio limpio sin cerrar el programa
+            }
+
+            Label lblNombre = new Label("Nombre: " + v.getNombre());
+            lblNombre.setStyle("-fx-font-weight: bold; -fx-font-size: 13px;");
+
+            Label lblCategoria = new Label("Categoría: " + v.getCategoria());
+            lblCategoria.setStyle("-fx-text-fill: #555555; -fx-font-size: 12px;");
+
+            Label lblPrecio = new Label("Precio: " + formatoMoneda.format(v.getPrecio()));
+            lblPrecio.setStyle("-fx-font-weight: bold; -fx-font-size: 12px;");
+
+            // Botón Verde: Agregar al carrito
+            Button btnCarrito = new Button("Agregar al carrito");
+            btnCarrito.setMaxWidth(Double.MAX_VALUE);
+            btnCarrito.setStyle("-fx-background-color: #2ECC71; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
+            btnCarrito.setOnAction(e -> mostrarAlerta("Carrito de Compras", v.getNombre() + " fue agregado a tu carrito."));
+
+            // Botón Rojo: Añadir a deseos
+            Button btnDeseos = new Button("Añadir a deseos");
+            btnDeseos.setMaxWidth(Double.MAX_VALUE);
+            btnDeseos.setStyle("-fx-background-color: #E74C3C; -fx-text-fill: white; -fx-font-weight: bold; -fx-cursor: hand;");
+            btnDeseos.setOnAction(e -> mostrarAlerta("Lista de Deseos", v.getNombre() + " se guardó en tus deseos."));
+
+            tarjeta.getChildren().addAll(imgVehiculo, lblNombre, lblCategoria, lblPrecio, btnCarrito, btnDeseos);
+            contenedorVehiculos.getChildren().add(tarjeta);
+        }
+    }
+
+    private void filtrarVehiculos(String texto) {
+        if (texto == null || texto.trim().isEmpty()) {
+            mostrarTarjetas(listaVehiculos);
+            return;
+        }
+        String filtro = texto.toLowerCase();
+        ObservableList<Vehiculo> filtrados = FXCollections.observableArrayList();
+        for (Vehiculo v : listaVehiculos) {
+            if (v.getNombre().toLowerCase().contains(filtro) || v.getCategoria().toLowerCase().contains(filtro)) {
+                filtrados.add(v);
+            }
+        }
+        mostrarTarjetas(filtrados);
+    }
+
+    @FXML
+    void mostrarEnConstruccion(ActionEvent event) {
+        mostrarAlerta("Módulo en desarrollo", "Esta vista se habilitará en la entrega final del proyecto.");
+    }
+
+    private void mostrarAlerta(String titulo, String mensaje) {
+        Alert alerta = new Alert(Alert.AlertType.INFORMATION);
+        alerta.setTitle(titulo);
+        alerta.setHeaderText(null);
+        alerta.setContentText(mensaje);
+        alerta.showAndWait();
+    }
+}
